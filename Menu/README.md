@@ -1,4 +1,4 @@
-# Display Message Office Add-in
+# Menu Office Add-in
 
 ## Description
 
@@ -22,7 +22,7 @@ The project uses modern web technologies including:
 1. Clone the repository:
    ```
    git clone <repository-url>
-   cd "Display Message"
+   cd "Menu"
    ```
 
 2. Install dependencies:
