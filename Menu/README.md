@@ -2,7 +2,7 @@
 
 ## Description
 
-This is a Microsoft Excel Add-in built with React and TypeScript. It adds a custom **Demo** tab to the Excel ribbon with a **Hello World** button. Clicking the button opens a task pane built with Fluent UI React and inserts text into cell A1 of the active worksheet.
+This is a Microsoft Excel Add-in built with React and TypeScript. It adds a custom **Demo** tab to the Excel ribbon with a **Hello World** button. Clicking the button opens a task pane built with Fluent UI React and displays "Hello World" text.
 
 The project uses modern web technologies including:
 - React for the user interface
@@ -56,10 +56,6 @@ To debug the add-in in Excel:
    ```
    npm run build
    ```
-
-2. Sideload the add-in into Excel using the generated `manifest.json`.
-
-For more detailed instructions on sideloading Office Add-ins, refer to the [official Microsoft documentation](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing).
 
 ### Available Scripts
 - `npm run build`: Build for production
