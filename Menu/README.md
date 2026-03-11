@@ -2,12 +2,12 @@
 
 ## Description
 
-This is a Microsoft Office Add-in built with React and TypeScript. It provides a task pane interface that displays various components including a header, hero list, text insertion functionality, and a simple "Hello World!" message. The add-in is designed to integrate with Office applications such as Excel, Outlook, PowerPoint, and Word, allowing users to enhance their productivity with custom functionality.
+This is a Microsoft Excel Add-in built with React and TypeScript. It adds a custom **Demo** tab to the Excel ribbon with a **Hello World** button. Clicking the button opens a task pane built with Fluent UI React and inserts text into cell A1 of the active worksheet.
 
 The project uses modern web technologies including:
 - React for the user interface
 - TypeScript for type safety
-- Fluent UI for consistent design
+- Fluent UI (v9) for consistent design
 - Webpack for bundling
 - Office.js for Office integration
 
@@ -47,12 +47,9 @@ The project uses modern web technologies including:
    ```
 
 ### Debugging
-To debug the add-in in different Office applications:
+To debug the add-in in Excel:
 
 - **Excel Desktop**: `npm run start -- desktop --app excel`
-- **Outlook Desktop**: `npm run start -- desktop --app outlook`
-- **PowerPoint Desktop**: `npm run start -- desktop --app powerpoint`
-- **Word Desktop**: `npm run start -- desktop --app word`
 
 ### Deployment
 1. Build the production version:
@@ -60,7 +57,7 @@ To debug the add-in in different Office applications:
    npm run build
    ```
 
-2. Sideload the add-in into your Office application using the generated manifest files (`manifest.xml` or `manifest.json`).
+2. Sideload the add-in into Excel using the generated `manifest.json`.
 
 For more detailed instructions on sideloading Office Add-ins, refer to the [official Microsoft documentation](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing).
 
