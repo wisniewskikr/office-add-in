@@ -12,6 +12,12 @@ const root = rootElement ? createRoot(rootElement) : undefined;
 
 /* Render application after Office initializes */
 Office.onReady(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("mode") !== "explicit") {
+    // Auto-opened by Excel on activation — hide immediately, no UI rendered
+    Office.addin.hide();
+    return;
+  }
   root?.render(
     <FluentProvider theme={webLightTheme}>
       <App title={title} />
