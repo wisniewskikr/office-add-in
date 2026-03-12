@@ -7,7 +7,7 @@ const DisplayUsernamePane: React.FC = () => {
   const [username, setUsername] = useState<string | null>(null);
 
   const handleDisplayUsername = () => {
-    const name = Office.context.userProfile.displayName;
+    const name = (Office.context as any).userProfile.displayName;
     setUsername(name);
   };
 
