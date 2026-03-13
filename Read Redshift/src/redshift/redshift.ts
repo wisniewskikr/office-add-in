@@ -57,15 +57,7 @@ async function pollUntilFinished(
       );
     }
     if (response.Status === "FINISHED") {
-      const subStatements = response.SubStatements;
-      if (!subStatements || subStatements.length === 0) {
-        throw new Error("No sub-statements returned");
-      }
-      const subId = subStatements[0].Id;
-      if (!subId) {
-        throw new Error("Sub-statement has no Id");
-      }
-      return subId;
+      return statementId;
     }
     await sleep(POLL_INTERVAL_MS);
   }
