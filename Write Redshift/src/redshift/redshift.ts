@@ -14,8 +14,8 @@ const MAX_POLL_ATTEMPTS = 60;
 
 export async function writeToRedshift(config: RedshiftConfig): Promise<void> {
   const id = await readCell("A2");
-  const name = await readCell("B2");
-  const sql = `INSERT INTO GREETINGS (id, name) VALUES (${Number(id)}, '${String(name).replace(/'/g, "''")}')`;
+  const message = await readCell("B2");
+  const sql = `INSERT INTO GREETINGS (id, message) VALUES (${Number(id)}, '${String(message).replace(/'/g, "''")}')`;
   const client = createRedshiftClient(config);
   const statementId = await runExecuteStatement(client, config, sql);
   await pollUntilFinished(client, statementId);
