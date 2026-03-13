@@ -1,202 +1,141 @@
-function readFromRedshift() {
+/* global Excel console */
 
-    var sql = "select * from GREETINGS";
-    var recordArray = getDataFromRedshift(sql);
-    fillGsheet(recordArray);
+import {
+  RedshiftDataClient,
+  ExecuteStatementCommand,
+  DescribeStatementCommand,
+  GetStatementResultCommand,
+  Field,
+} from "@aws-sdk/client-redshift-data";
+import { RedshiftConfig } from "./configuration";
+import { createRedshiftClient } from "./redshiftClient";
 
+const SQL = "select * from GREETINGS";
+const POLL_INTERVAL_MS = 1000;
+const MAX_POLL_ATTEMPTS = 60;
+
+export async function readFromRedshift(config: RedshiftConfig): Promise<void> {
+  const client = createRedshiftClient(config);
+  const statementId = await runExecuteStatement(client, config, SQL);
+  const subStatementId = await pollUntilFinished(client, statementId);
+  const recordArray = await getRecordArray(client, subStatementId);
+  await fillExcel(recordArray);
 }
 
-function initAWS() {
-    AWS.init(accessKey, secretKey);
+async function runExecuteStatement(
+  client: RedshiftDataClient,
+  config: RedshiftConfig,
+  sql: string
+): Promise<string> {
+  const response = await client.send(
+    new ExecuteStatementCommand({
+      ClusterIdentifier: config.clusterIdentifier,
+      Database: config.database,
+      DbUser: config.dbUser,
+      Sql: sql,
+    })
+  );
+  console.log("ExecuteStatement id:", response.Id);
+  if (!response.Id) {
+    throw new Error("ExecuteStatement returned no Id");
+  }
+  return response.Id;
 }
 
-function getDataFromRedshift(sql) {
-
-    initAWS();
-
-    var executeStatement = runExecuteStatement(sql);
-    var describeStatement = null;
-
-    do {
-        describeStatement = runDescribeStatement(executeStatement.Id);
-        if (describeStatement.Status == "FAILED") {
-            throw new Error('Error during connection with Redshift Data API. Error description: ' + describeStatement.Error);
-        }
-    } while (describeStatement.Status !== "FINISHED");
-
-    return getRecordArray(describeStatement);
-
-}
-
-function runExecuteStatement(sql) {
-
-    var resultJson = AWS.request(
-        typeAWS,
-        locationAWS,
-        'RedshiftData.BatchExecuteStatement',
-        {"Version": versionAWS},
-        method='POST',
-        payload={
-            "ClusterIdentifier": clusterIdentifierReshift,
-            "Database": defaultDatabaseRedshift,
-            "DbUser": dbUserRedshift,
-            "Sqls": [sql]
-        },
-        headers={
-            "X-Amz-Target": "RedshiftData.BatchExecuteStatement",
-            "Content-Type": "application/x-amz-json-1.1"
-        }
+async function pollUntilFinished(
+  client: RedshiftDataClient,
+  statementId: string
+): Promise<string> {
+  for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+    const response = await client.send(
+      new DescribeStatementCommand({ Id: statementId })
     );
-
-    Logger.log("Execute Statement result: " + resultJson);
-    return JSON.parse(resultJson.getContentText());
-
+    console.log("DescribeStatement status:", response.Status);
+    if (response.Status === "FAILED") {
+      throw new Error(
+        "Redshift statement failed: " + (response.Error ?? "unknown error")
+      );
+    }
+    if (response.Status === "FINISHED") {
+      const subStatements = response.SubStatements;
+      if (!subStatements || subStatements.length === 0) {
+        throw new Error("No sub-statements returned");
+      }
+      const subId = subStatements[0].Id;
+      if (!subId) {
+        throw new Error("Sub-statement has no Id");
+      }
+      return subId;
+    }
+    await sleep(POLL_INTERVAL_MS);
+  }
+  throw new Error("Timed out waiting for Redshift statement to finish");
 }
 
-function runDescribeStatement(id) {
+async function getRecordArray(
+  client: RedshiftDataClient,
+  subStatementId: string
+): Promise<Field[][][]> {
+  const recordArray: Field[][][] = [];
+  let nextToken: string | undefined = undefined;
 
-    var resultJson = AWS.request(
-        typeAWS,
-        locationAWS,
-        'RedshiftData.DescribeStatement',
-        {"Version": versionAWS},
-        method='POST',
-        payload={
-            "Id": id
-        },
-        headers={
-            "X-Amz-Target": "RedshiftData.DescribeStatement",
-            "Content-Type": "application/x-amz-json-1.1"
-        }
-    )
+  do {
+    const response = await client.send(
+      new GetStatementResultCommand({
+        Id: subStatementId,
+        NextToken: nextToken,
+      })
+    );
+    console.log("GetStatementResult nextToken:", response.NextToken);
+    if (response.Records) {
+      recordArray.push(response.Records as Field[][]);
+    }
+    nextToken = response.NextToken;
+  } while (nextToken);
 
-    Logger.log("Describe Statement result: " + resultJson);
-    return JSON.parse(resultJson.getContentText());
-
+  return recordArray;
 }
 
-function getRecordArray(describeStatement) {
+async function fillExcel(recordArray: Field[][][]): Promise<void> {
+  const rows: (string | number | boolean | null)[][] = [];
 
-    var recordArray = [];
-    var nextToken = null;
-    var statementResult = null;
-    do {
-        statementResult = runGetStatementResult(describeStatement.SubStatements[0].Id, nextToken);
-        recordArray.push(statementResult.Records);
-        nextToken = statementResult.NextToken;
-        Logger.log("Get Statement Result. Next Token: " + nextToken);
-    } while (statementResult.NextToken);
+  for (const page of recordArray) {
+    for (const columns of page) {
+      const row: (string | number | boolean | null)[] = columns.map(getFieldValue);
+      rows.push(row);
+    }
+  }
 
-    return recordArray;
+  if (rows.length === 0) {
+    return;
+  }
 
+  await Excel.run(async (context) => {
+    const sheet = context.workbook.worksheets.getActiveWorksheet();
+    const startRow = 1;
+    const startCol = 0;
+    const numRows = rows.length;
+    const numCols = rows[0].length;
+
+    const range = sheet.getRangeByIndexes(startRow, startCol, numRows, numCols);
+    range.values = rows;
+    await context.sync();
+  });
 }
 
-function runGetStatementResult(id, nextToken) {
-    var resultJson = AWS.request(
-        typeAWS,
-        locationAWS,
-        'RedshiftData.GetStatementResult',
-        {"Version": versionAWS},
-        method='POST',
-        payload={
-            "Id": id,
-            "NextToken" : nextToken
-        },
-        headers={
-            "X-Amz-Target": "RedshiftData.GetStatementResult",
-            "Content-Type": "application/x-amz-json-1.1"
-        }
-    )
-
-    Logger.log("Get Statement Result result: " + resultJson);
-    return JSON.parse(resultJson.getContentText());
-
+function getFieldValue(field: Field): string | number | boolean | null {
+  // Cast to plain object to avoid discriminated-union narrowing issues
+  const f = field as unknown as Record<string, unknown>;
+  if (f["isNull"]) return null;
+  if (f["stringValue"] != null) return f["stringValue"] as string;
+  if (f["longValue"] != null) return f["longValue"] as number;
+  if (f["doubleValue"] != null) return f["doubleValue"] as number;
+  if (f["booleanValue"] != null) return f["booleanValue"] as boolean;
+  if (f["blobValue"] != null) return String(f["blobValue"]);
+  console.log("Cannot find value for field:", JSON.stringify(field));
+  return null;
 }
 
-function fillGsheet(recordArray) {
-
-    var rowIndex = 1;
-    for (var i = 0; i < recordArray.length; i++) {
-
-        var rows = recordArray[i];
-        for (var j = 0; j < rows.length; j++) {
-            var columns = rows[j];
-            rowIndex++;
-            var columnIndex = 'A';
-
-            for (var k = 0; k < columns.length; k++) {
-
-                var field = columns[k];
-                var value = getFieldValue(field);
-                var range = columnIndex + rowIndex;
-                addToCell(range, value);
-
-                columnIndex = nextChar(columnIndex);
-
-            }
-
-        }
-
-    }
-
-}
-
-function getFieldValue(field) {
-
-    if (field.isNull != null) {
-        return null;
-    }
-
-    if (field.stringValue != null) {
-        return field.stringValue;
-    }
-
-    if (field.longValue != null) {
-        return field.longValue;
-    }
-
-    if (field.doubleValue != null) {
-        return null;
-    }
-
-    if (field.booleanValue != null) {
-        return field.booleanValue;
-    }
-
-    if (field.blobValue != null) {
-        return field.blobValue;
-    }
-
-    Logger.log("Can not find value for following field: " + JSON.stringify(field));
-    return null;
-
-}
-
-function nextChar(c) {
-    var column = letterToColumn(c);
-    column++;
-    return columnToLetter(column);
-}
-
-function addToCell(range, value) {
-    var spreadsheet = SpreadsheetApp.getActive();
-    spreadsheet.getRange(range).setValue(value);
-}
-
-function columnToLetter(column) {
-    var temp, letter = '';
-    while (column > 0) {
-        temp = (column - 1) % 26;
-        letter = String.fromCharCode(temp + 65) + letter;
-        column = (column - temp - 1) / 26;
-    }
-    return letter;
-}
-
-function letterToColumn(letter) {
-    var column = 0, length = letter.length;
-    for (var i = 0; i < length; i++) {
-        column += (letter.charCodeAt(i) - 64) * Math.pow(26, length - i - 1);
-    }
-    return column;
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
