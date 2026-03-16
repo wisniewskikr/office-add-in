@@ -40,9 +40,9 @@ async function ensureFolderExists(client: S3Client, config: S3Config): Promise<v
 }
 
 export async function uploadToS3(config: S3Config): Promise<void> {
-  const response = await fetch("/assets/demo.csv");
+  const response = await fetch(`/assets/${config.fileName}`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch demo.csv: ${response.statusText}`);
+    throw new Error(`Failed to fetch ${config.fileName}: ${response.statusText}`);
   }
   const csvContent = await response.text();
   const client = createS3Client(config);
@@ -51,7 +51,7 @@ export async function uploadToS3(config: S3Config): Promise<void> {
   await client.send(
     new PutObjectCommand({
       Bucket: config.bucketName,
-      Key: `${config.folderName}/demo.csv`,
+      Key: `${config.folderName}/${config.fileName}`,
       Body: csvContent,
       ContentType: "text/csv",
     })

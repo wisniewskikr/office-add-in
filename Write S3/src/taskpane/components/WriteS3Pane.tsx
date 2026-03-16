@@ -19,7 +19,7 @@ const WriteS3Pane: React.FC = () => {
     setSuccess(null);
     try {
       await uploadToS3(s3Config);
-      setSuccess("File demo.csv written to S3 successfully.");
+      setSuccess(`File ${s3Config.fileName} written to S3 successfully.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
