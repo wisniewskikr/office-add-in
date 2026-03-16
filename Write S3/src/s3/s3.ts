@@ -1,7 +1,43 @@
 /* global fetch */
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  CreateBucketCommand,
+  HeadBucketCommand,
+  PutObjectCommand,
+  S3Client,
+  S3ServiceException,
+} from "@aws-sdk/client-s3";
 import { S3Config } from "./configuration";
 import { createS3Client } from "./s3Client";
+
+async function ensureBucketExists(client: S3Client, config: S3Config): Promise<void> {
+  try {
+    await client.send(new HeadBucketCommand({ Bucket: config.bucketName }));
+  } catch (e) {
+    const status = e instanceof S3ServiceException ? e.$metadata.httpStatusCode : undefined;
+    if (status === 404 || status === 403) {
+      const createParams =
+        config.region === "us-east-1"
+          ? { Bucket: config.bucketName }
+          : {
+              Bucket: config.bucketName,
+              CreateBucketConfiguration: { LocationConstraint: config.region as any },
+            };
+      await client.send(new CreateBucketCommand(createParams));
+    } else {
+      throw e;
+    }
+  }
+}
+
+async function ensureFolderExists(client: S3Client, config: S3Config): Promise<void> {
+  await client.send(
+    new PutObjectCommand({
+      Bucket: config.bucketName,
+      Key: `${config.folderName}/`,
+      Body: "",
+    })
+  );
+}
 
 export async function uploadToS3(config: S3Config): Promise<void> {
   const response = await fetch("/assets/demo.csv");
@@ -10,11 +46,12 @@ export async function uploadToS3(config: S3Config): Promise<void> {
   }
   const csvContent = await response.text();
   const client = createS3Client(config);
-  const key = `${config.folderName}/demo.csv`;
+  await ensureBucketExists(client, config);
+  await ensureFolderExists(client, config);
   await client.send(
     new PutObjectCommand({
       Bucket: config.bucketName,
-      Key: key,
+      Key: `${config.folderName}/demo.csv`,
       Body: csvContent,
       ContentType: "text/csv",
     })
