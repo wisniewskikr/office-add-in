@@ -4,7 +4,7 @@ An Excel Office Add-in that uploads a CSV file to Amazon S3 with a single button
 
 ## Description
 
-Write S3 adds a **Demo** tab to the Excel ribbon with a **Write S3** button. Clicking the button opens a task pane containing a **Write to S3** button. When clicked, the add-in fetches `demo.csv` from the assets folder and uploads it to a configurable S3 bucket and folder.
+Write S3 adds a **Demo** tab to the Excel ribbon with a **Write S3** button. Clicking the button opens a task pane containing a **Write to S3** button. When clicked, the add-in fetches a configurable CSV file from the assets folder and uploads it to a configurable S3 bucket and folder.
 
 ## Installation
 
@@ -21,6 +21,7 @@ Write S3 adds a **Demo** tab to the Excel ribbon with a **Write S3** button. Cli
      region: "eu-west-1",
      bucketName: "YOUR_BUCKET_NAME",
      folderName: "uploads",
+     fileName: "demo.csv",
    };
    ```
 
@@ -34,5 +35,5 @@ Write S3 adds a **Demo** tab to the Excel ribbon with a **Write S3** button. Cli
 1. In Excel, click the **Demo** tab in the ribbon.
 2. Click the **Write S3** button to open the task pane.
 3. Click **Write to S3** in the task pane.
-4. The file `demo.csv` will be uploaded to `{folderName}/demo.csv` in your configured S3 bucket.
+4. The file configured as `fileName` will be uploaded to `{folderName}/{fileName}` in your configured S3 bucket.
 5. A success or error message will appear in the task pane.
