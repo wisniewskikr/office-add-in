@@ -7,7 +7,7 @@ export async function downloadFromS3(config: S3Config): Promise<string[][]> {
   const response = await client.send(
     new GetObjectCommand({
       Bucket: config.bucketName,
-      Key: `${config.folderName}/demo.csv`,
+      Key: `${config.folderName}/${config.fileName}`,
     })
   );
   const csvText = await (response.Body as any).transformToString();

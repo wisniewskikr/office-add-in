@@ -22,7 +22,7 @@ const ReadS3Pane: React.FC = () => {
         range.values = rows;
         await context.sync();
       });
-      setSuccess("demo.csv read from S3 and written to Excel.");
+      setSuccess(`${s3Config.fileName} read from S3 and written to Excel.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
