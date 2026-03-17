@@ -11,7 +11,7 @@ export interface STSConfig {
 export const stsConfig: STSConfig = {
   accessKeyId: "",
   secretAccessKey: "",
-  region: "eu-west-1",
+  region: "us-east-1",
   bucketName: "",
   folderName: "uploads",
   fileName: "demo.csv",

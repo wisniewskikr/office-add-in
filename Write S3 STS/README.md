@@ -60,21 +60,12 @@ Create an IAM role whose ARN you will put in `configuration.ts` as `roleArn`. Th
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "s3:HeadBucket",
-        "s3:CreateBucket",
-        "s3:PutObject"
-      ],
-      "Resource": [
-        "arn:aws:s3:::YOUR_BUCKET_NAME",
-        "arn:aws:s3:::YOUR_BUCKET_NAME/*"
-      ]
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::YOUR_BUCKET_NAME/*"
     }
   ]
 }
 ```
-
-> If the bucket already exists and you do not need to create it, `s3:CreateBucket` can be omitted.
 
 ### 3. Create the S3 bucket and folder
 
