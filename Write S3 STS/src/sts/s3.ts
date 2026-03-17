@@ -14,7 +14,7 @@ async function ensureBucketExists(client: S3Client, config: STSConfig): Promise<
     await client.send(new HeadBucketCommand({ Bucket: config.bucketName }));
   } catch (e) {
     const status = e instanceof S3ServiceException ? e.$metadata.httpStatusCode : undefined;
-    if (status === 404 || status === 403) {
+    if (status === 404) {
       const createParams =
         config.region === "us-east-1"
           ? { Bucket: config.bucketName }
