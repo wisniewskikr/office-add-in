@@ -13,10 +13,50 @@ Clicking "Write to Redshift" executes an `INSERT INTO GREETINGS (id, message) VA
 
 ### Prerequisites
 
-**AWS IAM:**
-1. Create IAM user `demo-redshift-user` with an inline policy allowing only `sts:AssumeRole` on the role below.
-2. Generate access key for the user — use in `configuration.ts`.
-3. Create IAM role `demo-redshift-role` with policy `AmazonRedshiftFullAccess` and trust policy allowing `demo-redshift-user` to assume it.
+**AWS IAM — Create role `demo-role-redshift-sts`:**
+1. Go to **IAM → Roles → Create role**.
+2. Select trusted entity type: **AWS account** → **This account**.
+3. Attach permission policy: `AmazonRedshiftDataFullAccess`.
+4. Name the role `demo-role-redshift-sts` and create it.
+
+**AWS IAM — Create user `demo-user-redshift-sts`:**
+1. Go to **IAM → Users → Create user**.
+2. Name the user `demo-user-redshift-sts`, click through to create (no permissions needed yet).
+3. Open the user, go to **Permissions → Add permissions → Create inline policy**.
+4. Switch to **JSON** editor and enter:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": "sts:AssumeRole",
+         "Resource": "arn:aws:iam::<account-id>:role/demo-role-redshift-sts"
+       }
+     ]
+   }
+   ```
+5. Name the policy `AssumeRedshiftRole` and save.
+6. Go to **Security credentials → Access keys → Create access key**.
+7. Choose **Other**, create the key and save `accessKeyId` and `secretAccessKey` — use them in `configuration.ts`.
+
+**AWS IAM — Update trust policy of `demo-role-redshift-sts`:**
+1. Go to **IAM → Roles → demo-redshift-role → Trust relationships → Edit trust policy**.
+2. Replace the content with:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": {
+           "AWS": "arn:aws:iam::<account-id>:user/demo-user-redshift-sts"
+         },
+         "Action": "sts:AssumeRole"
+       }
+     ]
+   }
+   ```
 
 **AWS Redshift:**
 1. Create a Redshift cluster.
