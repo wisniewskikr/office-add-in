@@ -13,9 +13,30 @@ Clicking "Write to Redshift" executes an `INSERT INTO GREETINGS (id, message) VA
 
 ### Prerequisites
 
-- Node.js v16 or later
-- An Amazon Redshift cluster with a `GREETINGS` table containing `id` (integer) and `message` (varchar) columns
-- AWS credentials with permission to call the Redshift Data API
+1. IAM role should be created:
+* **Select trusted entity**: AWS Service -> Redshift -> Redshift Customizable
+* **Add permissions**: AmazonRedshiftFullAccess
+* **Name, review and create**: demo-redshift-role
+1. IAM user should be created:
+* **Specify user details**: "User name" should be "demo-redshift-user"
+* **Set permissions**: Attach policies directly -> AmazonRedshiftFullAccess and AmazonRedshiftDataFullAccess
+* **Review and create**: click the button "Create user"
+1. Generate access key for IAM user:
+* **Choose user**: click the link "demo-redshift-user"
+* **Create access key**: Security credentials -> Access keys -> Create access key 
+* **Access key best practices & alternatives**: choose "Application running outside AWS"
+* **Set description tag**: N/A
+* **Retrieve access keys**: click the button "Download .csv file"
+1. Create AWS Redshift Cluster
+* **Node type**: choose "ra3.large"
+* **Nubmer of nodes**: 1
+* **Database encryption**: choose "Disable cluster encryption"
+* **Cluster permissions**: click the button "Associate IAM roles" and then choose "demo-redshift-role"
+* **SQL Queries**: Following SQL query should be run in database:
+```
+CREATE TABLE "public"."greetings"("id" INTEGER NULL, "message" VARCHAR NULL) ENCODE AUTO;
+INSERT INTO "public"."greetings" ("id", "message") values (1, 'Hello World');
+```
 
 ### Steps
 
@@ -24,12 +45,7 @@ Clicking "Write to Redshift" executes an `INSERT INTO GREETINGS (id, message) VA
    npm install
    ```
 
-2. Install the development HTTPS certificate (required by Office Add-ins):
-   ```
-   npx office-addin-dev-certs install
-   ```
-
-3. Fill in your AWS credentials and cluster details in `src/redshift/configuration.ts`:
+2. Fill in your AWS credentials and cluster details in `src/redshift/configuration.ts`:
    ```typescript
    export const redshiftConfig: RedshiftConfig = {
      accessKeyId: "<your-access-key-id>",
