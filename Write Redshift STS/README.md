@@ -58,9 +58,19 @@ Clicking "Write to Redshift" executes an `INSERT INTO GREETINGS (id, message) VA
    }
    ```
 
-**AWS Redshift:**
-1. Create a Redshift cluster.
-2. Connect to the cluster and run:
+**AWS Redshift — Create cluster:**
+1. Go to **Amazon Redshift → Clusters → Create cluster**.
+2. Set **Cluster identifier**: `redshift-cluster-1`.
+3. Choose **Free trial** node configuration (or select node type manually).
+4. Set **Admin user name** (e.g. `awsuser`) and a password.
+5. Under **Additional configurations → Network and security**, make sure the cluster is **publicly accessible** if connecting from a local machine.
+6. Click **Create cluster** and wait until the status is **Available**.
+7. Go to **IAM → Roles** and attach `demo-role-redshift-sts` to the cluster:
+   - Open the cluster → **Properties → Manage IAM roles** → add `demo-role-redshift-sts`.
+
+**AWS Redshift — Create table:**
+1. Go to the cluster → **Query data** (opens Query Editor v2).
+2. Connect using admin credentials and run:
    ```sql
    CREATE TABLE "public"."greetings" ("id" INTEGER NULL, "message" VARCHAR NULL);
    ```
