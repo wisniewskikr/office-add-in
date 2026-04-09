@@ -16,7 +16,7 @@ export async function writeToRedshift(config: RedshiftConfig): Promise<void> {
   const id = await readCell("A2");
   const message = await readCell("B2");
   const sql = `INSERT INTO GREETINGS (id, message) VALUES (${Number(id)}, '${String(message).replace(/'/g, "''")}')`;
-  const client = createRedshiftClient(config);
+  const client = await createRedshiftClient(config);
   const statementId = await runExecuteStatement(client, config, sql);
   await pollUntilFinished(client, statementId);
 }
