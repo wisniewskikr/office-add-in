@@ -10,7 +10,7 @@ export interface RedshiftConfig {
 export const redshiftConfig: RedshiftConfig = {
   accessKeyId: "",
   secretAccessKey: "",
-  region: "eu-west-1",
+  region: "us-east-1",
   clusterIdentifier: "redshift-cluster-1",
   dbUser: "awsuser",
   database: "dev",
