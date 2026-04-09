@@ -13,7 +13,17 @@ Clicking "Write to Redshift" executes an `INSERT INTO GREETINGS (id, message) VA
 
 ### Prerequisites
 
+**AWS IAM:**
+1. Create IAM user `demo-redshift-user` with an inline policy allowing only `sts:AssumeRole` on the role below.
+2. Generate access key for the user — use in `configuration.ts`.
+3. Create IAM role `demo-redshift-role` with policy `AmazonRedshiftFullAccess` and trust policy allowing `demo-redshift-user` to assume it.
 
+**AWS Redshift:**
+1. Create a Redshift cluster.
+2. Connect to the cluster and run:
+   ```sql
+   CREATE TABLE "public"."greetings" ("id" INTEGER NULL, "message" VARCHAR NULL);
+   ```
 
 ### Steps
 
@@ -27,6 +37,8 @@ Clicking "Write to Redshift" executes an `INSERT INTO GREETINGS (id, message) VA
    export const redshiftConfig: RedshiftConfig = {
      accessKeyId: "<your-access-key-id>",
      secretAccessKey: "<your-secret-access-key>",
+     roleArn: "arn:aws:iam::<account-id>:role/demo-redshift-role",
+     roleSessionName: "RedshiftWriteSession",
      region: "<your-region>",
      clusterIdentifier: "<your-cluster-identifier>",
      dbUser: "<your-db-user>",
