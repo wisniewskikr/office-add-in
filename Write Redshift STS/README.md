@@ -65,8 +65,8 @@ Clicking "Write to Redshift" executes an `INSERT INTO GREETINGS (id, message) VA
 4. Set **Admin user name** (e.g. `awsuser`) and a password.
 5. Under **Additional configurations → Network and security**, make sure the cluster is **publicly accessible** if connecting from a local machine.
 6. Click **Create cluster** and wait until the status is **Available**.
-7. Go to **IAM → Roles** and attach `demo-role-redshift-sts` to the cluster:
-   - Open the cluster → **Properties → Manage IAM roles** → add `demo-role-redshift-sts`.
+7. Attach `demo-role-redshift-sts` to the cluster:
+   - Go to **Amazon Redshift → Clusters → redshift-cluster-1 → Properties → Associated IAM roles** → **Associate IAM roles** → select `demo-role-redshift-sts` → confirm.
 
 **AWS Redshift — Create table:**
 1. Go to the cluster → **Query data** (opens Query Editor v2).
