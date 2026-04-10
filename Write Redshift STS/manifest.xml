@@ -4,7 +4,7 @@
   <Version>1.0.0.0</Version>
   <ProviderName>Contoso</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Write Redshift"/>
+  <DisplayName DefaultValue="Write Redshift STS"/>
   <Description DefaultValue="Write data to Redshift from Excel."/>
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-64.png"/>
@@ -68,11 +68,11 @@
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="WriteRedshiftTab.Label" DefaultValue="Demo"/>
-        <bt:String id="WriteRedshiftGroup.Label" DefaultValue="Write Redshift"/>
-        <bt:String id="WriteRedshiftButton.Label" DefaultValue="Write Redshift"/>
+        <bt:String id="WriteRedshiftGroup.Label" DefaultValue="Write Redshift STS"/>
+        <bt:String id="WriteRedshiftButton.Label" DefaultValue="Write Redshift STS"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="WriteRedshiftButton.Tooltip" DefaultValue="Click to open the Write Redshift task pane"/>
+        <bt:String id="WriteRedshiftButton.Tooltip" DefaultValue="Click to open the Write Redshift STS task pane"/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

@@ -30,7 +30,7 @@ const WriteRedshiftPane: React.FC = () => {
   return (
     <div>
       <Button appearance="primary" onClick={handleWriteToRedshift} disabled={isLoading}>
-        Write to Redshift
+        Write to Redshift STS
       </Button>
       {isLoading && <Spinner size="tiny" style={{ marginTop: 8 }} />}
       {error && (
