@@ -53,6 +53,13 @@ Clicking "Write to Redshift" executes an `INSERT INTO GREETINGS (id, message) VA
            "AWS": "arn:aws:iam::<account-id>:user/demo-user-redshift-sts"
          },
          "Action": "sts:AssumeRole"
+       },
+       {
+         "Effect": "Allow",
+         "Principal": {
+           "Service": "redshift.amazonaws.com"
+         },
+         "Action": "sts:AssumeRole"
        }
      ]
    }
