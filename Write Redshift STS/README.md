@@ -18,6 +18,24 @@ Clicking "Write to Redshift" executes an `INSERT INTO GREETINGS (id, message) VA
 2. Select trusted entity type: **AWS account** → **This account**.
 3. Attach permission policy: `AmazonRedshiftDataFullAccess`.
 4. Name the role `demo-role-redshift-sts` and create it.
+5. Open the newly created role, go to **Permissions → Add permissions → Create inline policy**.
+6. Switch to **JSON** editor and enter:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": "redshift:GetClusterCredentials",
+         "Resource": [
+           "arn:aws:redshift:<region>:<account-id>:dbuser:<cluster-identifier>/<db-user>",
+           "arn:aws:redshift:<region>:<account-id>:dbname:<cluster-identifier>/<database>"
+         ]
+       }
+     ]
+   }
+   ```
+7. Name the policy `RedshiftGetClusterCredentials` and save.
 
 **AWS IAM — Create user `demo-user-redshift-sts`:**
 1. Go to **IAM → Users → Create user**.
