@@ -1,10 +1,2 @@
-/* global Excel console */
-
-export async function readCell(address: string): Promise<string> {
-  return Excel.run(async (context) => {
-    const range = context.workbook.worksheets.getActiveWorksheet().getRange(address);
-    range.load("values");
-    await context.sync();
-    return String(range.values[0][0]);
-  });
-}
+// This file is intentionally empty.
+// Data is loaded from AWS S3 using the Redshift COPY command.

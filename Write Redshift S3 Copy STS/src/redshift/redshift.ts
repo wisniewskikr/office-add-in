@@ -1,21 +1,21 @@
 /* global console */
 
-import { readCell } from "../taskpane/taskpane";
 import {
   RedshiftDataClient,
   ExecuteStatementCommand,
   DescribeStatementCommand,
 } from "@aws-sdk/client-redshift-data";
-import { RedshiftConfig } from "./configuration";
+import { RedshiftConfig, S3Config } from "./configuration";
 import { createRedshiftClient } from "./redshiftClient";
 
 const POLL_INTERVAL_MS = 1000;
 const MAX_POLL_ATTEMPTS = 60;
 
-export async function writeToRedshift(config: RedshiftConfig): Promise<void> {
-  const id = await readCell("A2");
-  const message = await readCell("B2");
-  const sql = `INSERT INTO GREETINGS (id, message) VALUES (${Number(id)}, '${String(message).replace(/'/g, "''")}')`;
+export async function writeToRedshift(config: RedshiftConfig, s3Config: S3Config): Promise<void> {
+  const s3Path = s3Config.folder
+    ? `s3://${s3Config.bucket}/${s3Config.folder}/${s3Config.filename}`
+    : `s3://${s3Config.bucket}/${s3Config.filename}`;
+  const sql = `COPY GREETINGS (id, message) FROM '${s3Path}' IAM_ROLE '${config.roleArn}' FORMAT AS CSV IGNOREHEADER 1`;
   const client = await createRedshiftClient(config);
   const statementId = await runExecuteStatement(client, config, sql);
   await pollUntilFinished(client, statementId);

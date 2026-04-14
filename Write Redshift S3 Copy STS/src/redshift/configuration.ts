@@ -9,6 +9,12 @@ export interface RedshiftConfig {
   readonly database: string;
 }
 
+export interface S3Config {
+  readonly bucket: string;
+  readonly folder: string;
+  readonly filename: string;
+}
+
 export const redshiftConfig: RedshiftConfig = {
   accessKeyId: "",
   secretAccessKey: "",
@@ -18,4 +24,10 @@ export const redshiftConfig: RedshiftConfig = {
   clusterIdentifier: "redshift-cluster-1",
   dbUser: "awsuser",
   database: "dev",
+};
+
+export const defaultS3Config: S3Config = {
+  bucket: "",
+  folder: "",
+  filename: "",
 };
