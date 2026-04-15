@@ -1,22 +1,30 @@
-# Write Redshift S3 Copy STS Excel Add-in
+# Write Redshift S3 STS Excel Add-in
 
 ## Description
 
-This Excel Office Add-in loads data from a CSV file stored in Amazon S3 into the `GREETINGS` table in Amazon Redshift using the `COPY` command. Authentication is handled via AWS STS — a short-lived session role is assumed before executing the statement.
+This Excel Office Add-in reads data from the active worksheet and loads it into an Amazon Redshift table. The flow is:
 
-The CSV file must have two columns in this order:
+1. User fills in the Excel sheet — first row must be the header (`Id`, `Message`), subsequent rows contain data values.
+2. The add-in reads those rows and generates a CSV file in memory.
+3. The CSV is uploaded to Amazon S3 using temporary AWS credentials obtained via STS.
+4. Redshift executes a `COPY` command to load the data from S3.
 
-| Column | Type    | Redshift column |
-|--------|---------|-----------------|
-| id     | INTEGER | id              |
-| message| VARCHAR | message         |
+Authentication for both S3 and Redshift is handled via AWS STS — a short-lived role session is assumed before each operation.
 
-The first row is treated as a header and is skipped automatically (`IGNOREHEADER 1`).
+The target Redshift table must have two columns in this order:
 
-Clicking **Write Redshift S3 Copy STS** executes:
+| Column  | Type    | Redshift column |
+|---------|---------|-----------------|
+| id      | INTEGER | id              |
+| message | VARCHAR | message         |
+
+The first row of the CSV is treated as a header and is skipped automatically (`IGNOREHEADER 1`).
+
+Clicking **Write to Redshift via S3** executes the following sequence:
 
 ```sql
-COPY GREETINGS (id, message)
+-- Redshift COPY executed internally by the add-in:
+COPY <tableName> (id, message)
 FROM 's3://<bucket>/<folder>/<filename>'
 IAM_ROLE '<roleArn>'
 FORMAT AS CSV
@@ -50,7 +58,7 @@ IGNOREHEADER 1
    }
    ```
 7. Name the policy `RedshiftGetClusterCredentials` and save.
-8. Add a second inline policy to allow the role to read from S3 (required by the `COPY` command). Switch to **JSON** editor and enter:
+8. Add a second inline policy to allow the role to read from and write to S3. The add-in uploads the CSV (`s3:PutObject`) and Redshift reads it during `COPY` (`s3:GetObject`, `s3:ListBucket`). Switch to **JSON** editor and enter:
    ```json
    {
      "Version": "2012-10-17",
@@ -58,6 +66,7 @@ IGNOREHEADER 1
        {
          "Effect": "Allow",
          "Action": [
+           "s3:PutObject",
            "s3:GetObject",
            "s3:ListBucket"
          ],
@@ -69,7 +78,7 @@ IGNOREHEADER 1
      ]
    }
    ```
-   Replace `<bucket-name>` with your S3 bucket name. Name the policy `S3ReadForRedshiftCopy` and save.
+   Replace `<bucket-name>` with your S3 bucket name. Name the policy `S3AccessForRedshiftCopy` and save.
 
 **AWS IAM — Create user `demo-user-redshift-sts`:**
 1. Go to **IAM → Users → Create user**.
@@ -119,15 +128,10 @@ IGNOREHEADER 1
 
 > **Note:** The `redshift.amazonaws.com` principal in the trust policy is required so that Redshift can use this role to access S3 during the `COPY` command execution.
 
-**AWS S3 — Upload the CSV file:**
-1. Create or choose an existing S3 bucket.
-2. Upload a CSV file with the following format (header row required):
-   ```
-   id,message
-   1,Hello World
-   2,Foo Bar
-   ```
-3. Note the bucket name, folder path (if any), and filename — you will enter these in the task pane.
+**AWS S3 — Create bucket:**
+1. Create or choose an existing S3 bucket in the same region as your Redshift cluster.
+2. Note the bucket name and the folder path (if any) where the add-in will upload the CSV — you will enter these in `configuration.ts`.
+3. No manual CSV upload is needed — the add-in generates and uploads the file automatically from the Excel data.
 
 **AWS Redshift — Create cluster:**
 1. Go to **Amazon Redshift → Clusters → Create cluster**.
@@ -153,7 +157,7 @@ IGNOREHEADER 1
    npm install
    ```
 
-2. Fill in your AWS credentials and cluster details in `src/redshift/configuration.ts`:
+2. Fill in your AWS credentials, cluster details, and S3 location in `src/redshift/configuration.ts`:
    ```typescript
    export const redshiftConfig: RedshiftConfig = {
      accessKeyId: "<your-access-key-id>",
@@ -164,6 +168,13 @@ IGNOREHEADER 1
      clusterIdentifier: "<your-cluster-identifier>",
      dbUser: "<your-db-user>",
      database: "<your-database>",
+     tableName: "GREETINGS",
+   };
+
+   export const s3Config: S3Config = {
+     bucket: "<your-bucket-name>",
+     folder: "<optional-folder-path>",  // leave empty string "" if file goes to bucket root
+     filename: "data.csv",
    };
    ```
 
@@ -174,16 +185,27 @@ IGNOREHEADER 1
    npm start
    ```
 
-2. In Excel, click the **Demo** tab in the ribbon.
+2. In Excel, fill in the active worksheet:
+   - Cell **A1**: `Id`, cell **B1**: `Message` (header row)
+   - Rows 2 onwards: data values in columns A and B
 
-3. Click the **Write Redshift S3 Copy STS** button — the task pane opens.
+   Example:
 
-4. Fill in the S3 location of your CSV file:
-   - **S3 Bucket** — name of the bucket (e.g. `my-bucket`)
-   - **Folder** — optional prefix/path inside the bucket (e.g. `data/input`); leave empty if the file is at the root
-   - **Filename** — name of the CSV file (e.g. `data.csv`)
+   | Id | Message     |
+   |----|-------------|
+   | 1  | Hello World |
+   | 2  | Foo Bar     |
 
-5. Click **Write Redshift S3 Copy STS** — Redshift runs the `COPY` command, loads all rows from the CSV into the `GREETINGS` table, and a success message appears in the task pane.
+3. Click the **Demo** tab in the ribbon.
+
+4. Click the **Write Redshift S3 STS** button — the task pane opens.
+
+5. Click **Write to Redshift via S3**. The task pane shows the current status:
+   - *Reading data from Excel...*
+   - *Exporting data to AWS S3...*
+   - *Copying data from AWS S3 to AWS Redshift...*
+
+6. A success or error message appears when the operation completes.
 
 To verify the load, open Query Editor v2, connect to the cluster, and run:
 ```sql
