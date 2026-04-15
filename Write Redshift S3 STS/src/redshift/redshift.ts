@@ -5,17 +5,17 @@ import {
   ExecuteStatementCommand,
   DescribeStatementCommand,
 } from "@aws-sdk/client-redshift-data";
-import { RedshiftConfig, S3Config } from "./configuration";
+import { RedshiftConfig } from "./configuration";
 import { createRedshiftClient } from "./redshiftClient";
 
 const POLL_INTERVAL_MS = 1000;
 const MAX_POLL_ATTEMPTS = 60;
 
-export async function writeToRedshift(config: RedshiftConfig, s3Config: S3Config): Promise<void> {
-  const s3Path = s3Config.folder
-    ? `s3://${s3Config.bucket}/${s3Config.folder}/${s3Config.filename}`
-    : `s3://${s3Config.bucket}/${s3Config.filename}`;
-  const sql = `COPY GREETINGS (id, message) FROM '${s3Path}' IAM_ROLE '${config.roleArn}' FORMAT AS CSV IGNOREHEADER 1`;
+export async function copyFromS3ToRedshift(
+  config: RedshiftConfig,
+  s3Path: string
+): Promise<void> {
+  const sql = `COPY ${config.tableName} (id, message) FROM '${s3Path}' IAM_ROLE '${config.roleArn}' FORMAT AS CSV IGNOREHEADER 1`;
   const client = await createRedshiftClient(config);
   const statementId = await runExecuteStatement(client, config, sql);
   await pollUntilFinished(client, statementId);
@@ -44,7 +44,7 @@ async function runExecuteStatement(
 async function pollUntilFinished(
   client: RedshiftDataClient,
   statementId: string
-): Promise<string> {
+): Promise<void> {
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
     const response = await client.send(
       new DescribeStatementCommand({ Id: statementId })
@@ -56,7 +56,7 @@ async function pollUntilFinished(
       );
     }
     if (response.Status === "FINISHED") {
-      return statementId;
+      return;
     }
     await sleep(POLL_INTERVAL_MS);
   }
